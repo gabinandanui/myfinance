@@ -1,0 +1,15 @@
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  width: 100%;
+}
+.chartWrapper .css-32sa41-MuiChartsWrapper-root {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}
+.chartWrapper .css-32sa41-MuiChartsWrapper-root .MuiChartsLegend-root span{
+  color: #FFF;
+}

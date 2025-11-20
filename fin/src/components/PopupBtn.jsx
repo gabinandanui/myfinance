@@ -74,7 +74,7 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
 
       if (editExpense && editExpense.id) {
       // Update
-      const res = await fetch(`http://localhost:4000/api/expenses/${expenseData.id}`, {
+      const res = await fetch(`https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev/api/expenses/${expenseData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expenseData),
@@ -92,7 +92,8 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
       }
     } else {
       // Add
-      const res = await fetch("http://localhost:4000/api/expenses", {
+      const apiUrl = "https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev";
+      const res = await fetch(`${apiUrl}/api/expenses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expenseData),

@@ -1,8 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require("mongodb");
+require('dotenv').config();
 
-const uri = "mongodb+srv://gabinandan_db_user:zQzJ21JWcwJrqP14@myexpensemanager.jtnwery.mongodb.net/?retryWrites=true&w=majority&appName=MyExpenseManager";
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 const app = express();
@@ -12,11 +13,17 @@ app.use(express.json());
 let collection;
 
 async function connectDB() {
-  await client.connect();
-  const db = client.db("MyExpenseDB");
-  collection = db.collection("My Expense Collection");
+  try {
+    await client.connect();
+    const db = client.db("MyExpenseDB");
+    collection = db.collection("My Expense Collection");
+    console.log("Successfully connected to MongoDB!");
+  } catch (error) {
+    console.error("Failed to connect to MongoDB", error);
+    process.exit(1); // Exit the process with an error code
+  }
 }
-connectDB();
+connectDB().catch(console.error);
 
 // Get all expenses
 app.get('/api/expenses', async (req, res) => {
@@ -53,4 +60,4 @@ app.delete('/api/expenses/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(4000, () => console.log('Server running on port 4000'));
+module.exports = app;

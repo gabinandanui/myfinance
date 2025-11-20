@@ -19,7 +19,8 @@ const ExpenseDisplay = ({ expense, setExpense, editExpense, SetEditExpense, refr
   //   }
   // }, []);
   useEffect(() => {
-  fetch('http://localhost:4000/api/expenses')
+  const apiUrl = "https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev";
+  fetch(`${apiUrl}/api/expenses`)
     .then(res => res.json())
     .then(data => setExpense(data));
     if (refreshData) {

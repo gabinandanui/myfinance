@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "backend/server.js",
@@ -9,7 +8,7 @@
       "src": "fin/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "fin/dist"
       }
     }
   ],
@@ -20,17 +19,11 @@
     },
     {
       "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "dest": "fin/dist/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
-  "rewrites": [
-    { 
-      "source": "/(.*)", 
-      "destination": "/index.html" 
+      "dest": "fin/dist/index.html"
     }
   ]
 }

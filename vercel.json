@@ -3,7 +3,6 @@
   "buildCommand": "cd fin && npm ci && npm run build",
   "outputDirectory": "fin/dist",
   "installCommand": "cd fin && npm ci",
-  "framework": null,
   "builds": [
     {
       "src": "backend/server.js",
@@ -16,12 +15,8 @@
       "dest": "backend/server.js"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "fin/dist/assets/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "fin/dist/index.html"
+      "dest": "/index.html"
     }
   ]
 }

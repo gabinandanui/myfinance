@@ -1,17 +1,17 @@
 // Get API URL from environment or default to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const expenseAPI = {
   // Get all expenses
   getAll: async () => {
-    const response = await fetch(`${API_URL}/api/expenses`);
+    const response = await fetch(`${API_URL}/expenses`);
     if (!response.ok) throw new Error('Failed to fetch expenses');
     return response.json();
   },
 
   // Add new expense
   create: async (expense) => {
-    const response = await fetch(`${API_URL}/api/expenses`, {
+    const response = await fetch(`${API_URL}/expenses`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(expense)
@@ -22,7 +22,7 @@ export const expenseAPI = {
 
   // Update expense
   update: async (id, expense) => {
-    const response = await fetch(`${API_URL}/api/expenses/${id}`, {
+    const response = await fetch(`${API_URL}/expenses/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(expense)
@@ -33,7 +33,7 @@ export const expenseAPI = {
 
   // Delete expense
   delete: async (id) => {
-    const response = await fetch(`${API_URL}/api/expenses/${id}`, {
+    const response = await fetch(`${API_URL}/expenses/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete expense');

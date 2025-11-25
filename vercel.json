@@ -1,33 +1,11 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "backend/package.json",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["backend/**"]
-      }
-    },
-    {
-      "src": "fin/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "fin/dist"
-      }
-    }
-  ],
+  "buildCommand": "cd fin && npm install && npm run build",
+  "outputDirectory": "fin/dist",
+  "framework": null,
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "backend/server.js"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "fin/dist/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf|eot))",
-      "dest": "fin/dist/$1"
     },
     {
       "src": "/(.*)",

@@ -1,5 +1,11 @@
 {
   "rewrites": [
+    // 1. Backend Rewrite: Send all requests starting with /api/ to the /backed directory
+    {
+      "source": "/api/(.*)",
+      "destination": "/backed/api/$1"
+    },
+    // 2. Frontend Rewrite (SPA Fix): Send all other requests to the frontend's index.html
     {
       "source": "/(.*)",
       "destination": "/index.html"

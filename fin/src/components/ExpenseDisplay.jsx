@@ -10,25 +10,59 @@ import Paper from '@mui/material/Paper';
 import TablePagination from '@mui/material/TablePagination';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { expenseOptions } from '../data';
+import { expenseAPI } from '../services/api';
 
-const ExpenseDisplay = ({ expense, setExpense, editExpense, SetEditExpense, refreshData }) => {
-  // useEffect(() => { //on page load get the expenses data and assign it to expense
-  //   const storedExpenses = localStorage.getItem('expense');
-  //   if (storedExpenses) {
-  //     setExpense(JSON.parse(storedExpenses));
-  //   }
-  // }, []);
+function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  // Use expense from props (parent state) instead of local state
+  const expenses = expense || [];
+
   useEffect(() => {
-  const apiUrl = "https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev";
-  fetch(`${apiUrl}/api/expenses`)
-    .then(res => res.json())
-    .then(data => setExpense(data));
-    if (refreshData) {
-      refreshData();
+    loadExpenses();
+  }, []);
+
+  const loadExpenses = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Loading expenses...');
+      const data = await expenseAPI.getAll();
+      console.log('✅ Expenses loaded:', data);
+      setExpense(data); // Update parent state
+      setError(null);
+    } catch (err) {
+      console.error('❌ Error loading expenses:', err);
+      setError('Failed to load expenses. Make sure backend is running.');
+    } finally {
+      setLoading(false);
     }
-}, [editExpense, refreshData]);
-  const [page, setPage] = useState(0); //current page
-  const [rowsPerPage, setRowsPerPage] = useState(5); // rows per page
+  };
+
+  const handleDeleteExpense = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting expense:', id);
+      await expenseAPI.delete(id);
+      console.log('✅ Expense deleted');
+      
+      // Update parent state
+      setExpense(expenses.filter(e => e.id !== id && e._id !== id));
+    } catch (err) {
+      console.error('❌ Error deleting expense:', err);
+      setError('Failed to delete expense');
+    }
+  };
+
+  const handleEdit = (expenseItem) => {
+    console.log('✏️ Editing expense:', expenseItem);
+    SetEditExpense(expenseItem);
+  };
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -39,130 +73,218 @@ const ExpenseDisplay = ({ expense, setExpense, editExpense, SetEditExpense, refr
     setPage(0);
   };
 
-  const handleEdit = (dataToEdit) => {
-    SetEditExpense({ ...dataToEdit });
-    console.log(dataToEdit);
-    if (refreshData) {
-      refreshData();
-    }
-  };
-
-  // // Pagination logic
-  // const paginatedExpenses = useMemo(() => {
-  //   const start = page * rowsPerPage;
-  //   const end = start + rowsPerPage;
-  //   return expense.slice(start, end);
-  // }, [expense, page, rowsPerPage]);
-
-  const chartData = useMemo(() => {
-    if (!expense || expense.length === 0) return [];
-    const expenseSummary = expense.reduce((acc, currentExpense) => {
-      const amt = parseInt(currentExpense.expenseAmount) || 0;
-      const cat = currentExpense.expenseCategory;
-      acc[cat] = (acc[cat] || 0) + amt;
-      return acc;
-    }, {});
-    return Object.entries(expenseSummary).map(([category, amount], i) => ({
-      id: i,
-      label: category,
-      value: amount
-    }));
-  }, [expense]);
-
-  // Sort expenses by date (latest first)
-  const sortedExpenses = useMemo(() => {
-    return [...expense].sort((a, b) => {
-      // Assumes date is in DD/MM/YYYY format
-      const [da, ma, ya] = a.date.split('/').map(Number);
-      const [db, mb, yb] = b.date.split('/').map(Number);
-      const dateA = new Date(ya, ma - 1, da);
-      const dateB = new Date(yb, mb - 1, db);
-      return dateB - dateA; // latest first
-    });
-  }, [expense]);
-
-  // Pagination logic (use sortedExpenses instead of expense)
+  // Paginate expenses
   const paginatedExpenses = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedExpenses.slice(start, end);
-  }, [sortedExpenses, expense, page, rowsPerPage]);
+    const startIndex = page * rowsPerPage;
+    return expenses.slice(startIndex, startIndex + rowsPerPage);
+  }, [expenses, page, rowsPerPage]);
+
+  // Calculate chart data by category
+  const chartData = useMemo(() => {
+    const categoryTotals = {};
+    
+    expenses.forEach((expense) => {
+      const matchedOption = expenseOptions.find(
+        (e) => e.label.toLowerCase() === expense.expenseCategory.toLowerCase()
+      );
+      const category = matchedOption ? matchedOption.category : 'Unknown';
+      
+      if (!categoryTotals[category]) {
+        categoryTotals[category] = 0;
+      }
+      categoryTotals[category] += parseFloat(expense.expenseAmount || 0);
+    });
+
+    return Object.keys(categoryTotals).map((category, index) => ({
+      id: index,
+      value: categoryTotals[category],
+      label: category,
+    }));
+  }, [expenses]);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '400px' 
+      }}>
+        <p>Loading expenses...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        padding: '20px', 
+        color: 'red', 
+        textAlign: 'center',
+        backgroundColor: '#ffe0e0',
+        borderRadius: '5px',
+        margin: '20px'
+      }}>
+        <p>{error}</p>
+        <button 
+          onClick={loadExpenses}
+          style={{
+            marginTop: '10px',
+            padding: '10px 20px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
-    <div className='flex flex-row gap-5'>
-      <TableContainer component={Paper} className='flex flex-col tableContainer'>
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Expenses</TableCell>
-              <TableCell>Amount (₹)</TableCell>
-              <TableCell>Expenses Category</TableCell>
-              <TableCell align="right">Date</TableCell>
-              <TableCell align="right">Payment</TableCell>
-              <TableCell align="right">Comment</TableCell>
-              <TableCell align="right">Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedExpenses.map((expenseItem) => {
-              const matchedOption = expenseOptions.find(
-                (e) => e.label.toLowerCase() === expenseItem.expenseCategory.toLowerCase()
-              );
-              const category = matchedOption ? matchedOption.category : 'Unknown';
-              return (
-                <TableRow
-                  key={expenseItem.id}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">{expenseItem.expenseCategory}</TableCell>
-                  <TableCell component="th" scope="row">{expenseItem.expenseAmount}</TableCell>
-                  <TableCell component="th" scope="row">{category}</TableCell>
-                  <TableCell align="right">{expenseItem.date}</TableCell>
-                  <TableCell align="right">{expenseItem.paymentCategory}</TableCell>
-                  <TableCell align="right">{expenseItem.comment}</TableCell>
-                  <TableCell align="right"><button onClick={() => handleEdit(expenseItem)} className='btn text-white bg-blue-700'>Edit</button></TableCell>
+      <div className='flex flex-row gap-5'>
+        <TableContainer component={Paper} className='flex flex-col tableContainer'>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Expenses</TableCell>
+                <TableCell>Amount (₹)</TableCell>
+                <TableCell>Category</TableCell>
+                <TableCell align="right">Date</TableCell>
+                <TableCell align="right">Payment</TableCell>
+                <TableCell align="right">Comment</TableCell>
+                <TableCell align="right">Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedExpenses.length > 0 ? (
+                paginatedExpenses.map((expenseItem) => {
+                  const matchedOption = expenseOptions.find(
+                    (e) => e.label.toLowerCase() === expenseItem.expenseCategory.toLowerCase()
+                  );
+                  const category = matchedOption ? matchedOption.category : 'Unknown';
+                  
+                  return (
+                    <TableRow
+                      key={expenseItem._id || expenseItem.id}
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    >
+                      <TableCell component="th" scope="row">
+                        {expenseItem.expenseCategory}
+                      </TableCell>
+                      <TableCell component="th" scope="row">
+                        ₹{parseFloat(expenseItem.expenseAmount).toFixed(2)}
+                      </TableCell>
+                      <TableCell component="th" scope="row">
+                        {category}
+                      </TableCell>
+                      <TableCell align="right">
+                        {expenseItem.date}
+                      </TableCell>
+                      <TableCell align="right">
+                        {expenseItem.paymentCategory}
+                      </TableCell>
+                      <TableCell align="right">
+                        {expenseItem.comment || '-'}
+                      </TableCell>
+                      <TableCell align="right">
+                        <button 
+                          onClick={() => handleEdit(expenseItem)} 
+                          className='btn text-white bg-blue-700'
+                          style={{
+                            padding: '5px 15px',
+                            borderRadius: '5px',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteExpense(expenseItem._id || expenseItem.id)} 
+                          className='btn text-white bg-red-700'
+                          style={{
+                            padding: '5px 15px',
+                            borderRadius: '5px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            marginLeft: '5px'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No expenses found. Add your first expense!
+                  </TableCell>
                 </TableRow>
-              );
-            })}
-            <TableRow>
-              <TableCell component="th" scope="row"></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        <TablePagination
-          component="div"
-          count={expense.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-        />
-      </TableContainer>
-      <div className="chartWrapper">
-        <PieChart
-          series={[
-            {
-              data: chartData,
-              highlightScope: { faded: 'global', highlighted: 'item' },
-              faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
-            },
-          ]}
-          width={200}
-          height={200}
+              )}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={expenses.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+          />
+        </TableContainer>
+        
+        <div className="chartWrapper" style={{ minWidth: '250px' }}>
+          <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>
+            Expenses by Category
+          </h3>
+          {chartData.length > 0 ? (
+            <PieChart
+              series={[
+                {
+                  data: chartData,
+                  highlightScope: { faded: 'global', highlighted: 'item' },
+                  faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
+                },
+              ]}
+              width={300}
+              height={250}
+            />
+          ) : (
+            <p style={{ textAlign: 'center', color: '#666' }}>
+              No data to display
+            </p>
+          )}
           
-        />
+          {/* Legend */}
+          {chartData.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              {chartData.map((item) => (
+                <div key={item.id} style={{ marginBottom: '5px' }}>
+                  <strong>{item.label}:</strong> ₹{item.value.toFixed(2)}
+                </div>
+              ))}
+              <div style={{ 
+                marginTop: '10px', 
+                paddingTop: '10px', 
+                borderTop: '2px solid #333',
+                fontWeight: 'bold' 
+              }}>
+                Total: ₹{chartData.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
-};
+}
 
 export default ExpenseDisplay;

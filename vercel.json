@@ -1,15 +1,13 @@
 {
+  "version": 2,
+  "buildCommand": "cd fin && npm ci && npm run build",
+  "outputDirectory": "fin/dist",
+  "installCommand": "cd fin && npm ci",
+  "framework": null,
   "builds": [
     {
       "src": "backend/server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "fin/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "fin/dist"
-      }
     }
   ],
   "routes": [

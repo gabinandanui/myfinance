@@ -1,0 +1,6 @@
+.vercel
+backend/.env
+fin/.env.development
+fin/.env.production
+backend/node_modules/
+fin/node_modules/

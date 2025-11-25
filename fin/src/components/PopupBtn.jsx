@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -12,7 +12,9 @@ import AutoCompleteDropdown from './AutoCompleteDropdown';
 import WrapperComponent from './WrapperComponent';
 import dayjs from 'dayjs';
 import { TextField } from "@mui/material";
-const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
+import { expenseAPI } from '../services/api';
+
+const PopupBtn = ({ expense, setExpense, editExpense, SetEditExpense, onExpenseAdded }) => {
   const [form, setForm] = useState({
     date: "",
     expenseAmount: "",
@@ -23,10 +25,9 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(null);
   const [dateError, setDateError] = useState(false);
-  // Default should be null or an option object, not a string
-  const [expenseCategory, setExpenseCategory] = useState(null);
-  const [paymentCategory, setPaymentCategory] = useState(null);
-  const [amount, setAmount] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   // Populate form when editing
   useEffect(() => {
     if (editExpense && editExpense.id) {
@@ -53,83 +54,142 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+
   const handleClickOpen = () => setOpen(true);
+
   const handleClose = () => {
     setOpen(false);
     SetEditExpense({});
-    setExpenseCategory(null);
-    setPaymentCategory(null);
-    setAmount(null);
     setDate(dayjs());
+    setError(null);
+    setForm({
+      date: "",
+      expenseAmount: "",
+      expenseCategory: "",
+      paymentCategory: "",
+      comment: "",
+    });
   };
+
   // Handle form submit for add/update
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    const expenseData = {
-      ...form,
-      id: editExpense && editExpense.id ? editExpense.id : Date.now().toString(),
-      date: form.date ? dayjs(form.date).format("DD/MM/YYYY") : "",
-    };
+    try {
+      // Prepare expense data
+      const expenseData = {
+        expenseCategory: form.expenseCategory,
+        expenseAmount: parseFloat(form.expenseAmount),
+        date: form.date ? dayjs(form.date).format("DD/MM/YYYY") : dayjs().format("DD/MM/YYYY"),
+        paymentCategory: form.paymentCategory,
+        comment: form.comment || "",
+      };
 
-      if (editExpense && editExpense.id) {
-      // Update
-      const res = await fetch(`https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev/api/expenses/${expenseData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expenseData),
-      });
-      if (res.ok) {
-        const text = await res.text();
-        if (text) {
-          const updated = JSON.parse(text);
-          setExpense((prev) =>
-            prev.map((item) => (item.id === updated.id ? updated : item))
-          );
-        }
+      console.log('📤 Submitting expense:', expenseData);
+
+      if (editExpense && (editExpense.id || editExpense._id)) {
+        // Update existing expense
+        const id = editExpense._id || editExpense.id;
+        console.log('✏️ Updating expense with ID:', id);
+        
+        const updated = await expenseAPI.update(id, expenseData);
+        
+        console.log('✅ Expense updated:', updated);
+        
+        // Update in parent state
+        setExpense((prev) =>
+          prev.map((item) => 
+            (item._id === id || item.id === id) ? { ...item, ...updated } : item
+          )
+        );
+        
         SetEditExpense({});
-        handleClose && handleClose();
+      } else {
+        // Add new expense
+        console.log('➕ Adding new expense');
+        
+        const newExpense = await expenseAPI.create(expenseData);
+        
+        console.log('✅ Expense added:', newExpense);
+        
+        // Add to parent state
+        setExpense((prev) => [...prev, newExpense]);
+        
+        // Call callback if provided
+        if (onExpenseAdded) {
+          onExpenseAdded(newExpense);
+        }
       }
-    } else {
-      // Add
-      const apiUrl = "https://humble-train-x55v4w66x656c6x6p-4000.app.github.dev";
-      const res = await fetch(`${apiUrl}/api/expenses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expenseData),
-      });
-      const saved = await res.json();
-      setExpense((prev) => [...prev, saved]);
+
+      handleClose();
+    } catch (err) {
+      console.error('❌ Error submitting expense:', err);
+      setError(err.message || 'Failed to save expense. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    handleClose && handleClose();
   };
 
   return (
     <>
-    <div className='flex justify-between pb-9'>
-    <h1>Expense Details</h1>
-      <Button variant="outlined" onClick={handleClickOpen}>
-        Add Expenses
-      </Button>
-    </div>
+      <div className='flex justify-between pb-9'>
+        <h1>Expense Details</h1>
+        <Button variant="outlined" onClick={handleClickOpen}>
+          Add Expenses
+        </Button>
+      </div>
+      
       <Dialog open={open} onClose={handleClose} maxWidth="xl" fullWidth className="w-full">
-        <DialogTitle>Add Your Expenses Data here</DialogTitle>
+        <DialogTitle>
+          {editExpense && (editExpense.id || editExpense._id) ? 'Edit Expense' : 'Add Your Expenses Data here'}
+        </DialogTitle>
+        
         <DialogContent className="w-full">
           <DialogContentText>
-            Add Following details to keep the financial info organized
+            {editExpense && (editExpense.id || editExpense._id) 
+              ? 'Update the expense details below' 
+              : 'Add following details to keep the financial info organized'}
           </DialogContentText>
+          
+          {error && (
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#ffe0e0',
+              color: 'red',
+              borderRadius: '5px',
+              marginTop: '10px',
+              marginBottom: '10px'
+            }}>
+              {error}
+            </div>
+          )}
+          
           <form className="mt-5" onSubmit={handleSubmit} id="subscription-form">
             <WrapperComponent wrapperClass="flex gap-x-5 w-full">
-             <SelectDate
-              value={form.date ? dayjs(form.date, "DD/MM/YYYY") : null}
-              className="w-full"
-              onChange={(newDate) => {
-                setForm({ ...form, date: newDate });
-                setDateError(!newDate);
-              }}
-              error={dateError}
-            />
-              <TextField className="w-full" id="my-expense-amount" value={form.expenseAmount} name="expenseAmount" type="number" label='Amount' required onChange={handleChange}/>
+              <SelectDate
+                value={form.date ? dayjs(form.date, "DD/MM/YYYY") : null}
+                className="w-full"
+                onChange={(newDate) => {
+                  setForm({ ...form, date: newDate });
+                  setDateError(!newDate);
+                }}
+                error={dateError}
+              />
+              
+              <TextField 
+                className="w-full" 
+                id="my-expense-amount" 
+                value={form.expenseAmount} 
+                name="expenseAmount" 
+                type="number" 
+                label='Amount' 
+                required 
+                onChange={handleChange}
+                inputProps={{ min: 0, step: "0.01" }}
+              />
+              
               <AutoCompleteDropdown
                 name="expenseCategory"
                 customID="my-expense-category"
@@ -138,6 +198,7 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
                 customValue={form.expenseCategory}
                 customSetFunction={(value) => setForm({ ...form, expenseCategory: value })}
               />
+              
               <AutoCompleteDropdown
                 name="paymentCategory"
                 customID="my-payement-category"
@@ -146,7 +207,6 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
                 customValue={form.paymentCategory}
                 customSetFunction={(value) => setForm({ ...form, paymentCategory: value })}
               />
-
             </WrapperComponent>
 
             <TextareaAutosize
@@ -154,12 +214,12 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
               minRows={4}
               aria-label="maximum height"
               placeholder="Add comment with details related to this transaction eg: Milk bought in this shop"
-              defaultValue=""
               name="comment"
               id="my-expense-comment"
               value={form.comment}
               onChange={handleChange}
             />
+            
             <input
               type="hidden"
               name="my-expense-category"
@@ -172,10 +232,16 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
             />
           </form>
         </DialogContent>
+        
         <DialogActions>
-          { editExpense['id'] && editExpense['id'].length >0 ? '' : <Button onClick={handleClose}>Cancel</Button>}
-          <Button type="submit" form="subscription-form">
-            {editExpense['id'] && editExpense['id'].length >0 ? 'Update' : 'Add'}
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" form="subscription-form" disabled={loading}>
+            {loading 
+              ? 'Saving...' 
+              : (editExpense && (editExpense.id || editExpense._id) ? 'Update' : 'Add')
+            }
           </Button>
         </DialogActions>
       </Dialog>
@@ -183,5 +249,4 @@ const PopupBtn = ({expense, setExpense, editExpense, SetEditExpense }) => {
   );
 };
 
-
-export default PopupBtn
+export default PopupBtn;

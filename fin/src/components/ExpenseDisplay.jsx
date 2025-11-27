@@ -17,12 +17,27 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [containerWidth, setContainerWidth] = useState(500);
+  const chartRef = React.useRef(null);
 
   // Use expense from props (parent state) instead of local state
   const expenses = expense || [];
 
   useEffect(() => {
     loadExpenses();
+  }, []);
+
+  useEffect(() => {
+    // Handle window resize to make chart responsive
+    const handleResize = () => {
+      if (chartRef.current) {
+        setContainerWidth(chartRef.current.offsetWidth);
+      }
+    };
+
+    handleResize(); // Set initial width
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const loadExpenses = async () => {
@@ -241,7 +256,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
           />
         </TableContainer>
         
-        <div className="chartWrapper" style={{ minWidth: '0', flex: '1', width: '100%' }}>
+        <div className="chartWrapper" style={{ minWidth: '0', flex: '1', width: '100%' }} ref={chartRef}>
           <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>
             Expenses by Category
           </h3>
@@ -254,7 +269,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
                   faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
                 },
               ]}
-              width={500}
+              width={Math.max(containerWidth, 300)}
               height={300}
               slotProps={{
                 legend: { hidden: true },

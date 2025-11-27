@@ -72,8 +72,8 @@ app.get('/api/expenses', async (req, res) => {
     const expenses = await collection.find({}).toArray();
     res.json(expenses);
   } catch (error) {
-    console.error('Error fetching expenses:', error);
-    res.status(500).json({ error: 'Failed to fetch expenses' });
+    console.error('Error fetching expenses:', error.stack || error);
+    res.status(500).json({ error: 'Failed to fetch expenses', message: error.message });
   }
 });
 
@@ -92,8 +92,8 @@ app.post('/api/expenses', async (req, res) => {
       _id: result.insertedId
     });
   } catch (error) {
-    console.error('Error adding expense:', error);
-    res.status(500).json({ error: 'Failed to add expense' });
+    console.error('Error adding expense:', error.stack || error);
+    res.status(500).json({ error: 'Failed to add expense', message: error.message });
   }
 });
 
@@ -128,8 +128,8 @@ app.put('/api/expenses/:id', async (req, res) => {
       res.status(404).json({ error: "Expense not found" });
     }
   } catch (error) {
-    console.error('Error updating expense:', error);
-    res.status(500).json({ error: 'Failed to update expense' });
+    console.error('Error updating expense:', error.stack || error);
+    res.status(500).json({ error: 'Failed to update expense', message: error.message });
   }
 });
 
@@ -155,17 +155,17 @@ app.delete('/api/expenses/:id', async (req, res) => {
       res.status(404).json({ error: "Expense not found" });
     }
   } catch (error) {
-    console.error('Error deleting expense:', error);
-    res.status(500).json({ error: 'Failed to delete expense' });
+    console.error('Error deleting expense:', error.stack || error);
+    res.status(500).json({ error: 'Failed to delete expense', message: error.message });
   }
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error('Unhandled error:', err && (err.stack || err));
   res.status(500).json({ 
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? (err && err.message) : 'Something went wrong'
   });
 });
 

@@ -12,6 +12,11 @@
     },
     {
       "source": "/(.*)",
+      "has": [{ "type": "file" }],
+      "destination": "/fin/dist/$1"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/fin/dist/index.html"
     }
   ]

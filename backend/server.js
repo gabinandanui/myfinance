@@ -3,7 +3,11 @@ const cors = require('cors');
 const { MongoClient, ObjectId } = require("mongodb");
 require('dotenv').config();
 
+
 const uri = process.env.MONGODB_URI;
+if (!uri) {
+  console.error('MONGODB_URI is not set!');
+}
 const client = new MongoClient(uri);
 
 const app = express();

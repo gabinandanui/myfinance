@@ -254,7 +254,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
                   faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
                 },
               ]}
-              width={100%}
+              width={500}
               height={300}
               slotProps={{
                 legend: { hidden: true },

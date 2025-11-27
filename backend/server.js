@@ -19,7 +19,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  // Add your Vercel domain here, e.g., 'https://myfinance.vercel.app'
+  'https://myfinance-self.vercel.app',
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
 ];

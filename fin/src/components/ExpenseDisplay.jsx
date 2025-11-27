@@ -256,6 +256,9 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
               ]}
               width={300}
               height={250}
+              slotProps={{
+                legend: { hidden: true },
+              }}
             />
           ) : (
             <p style={{ textAlign: 'center', color: '#666' }}>

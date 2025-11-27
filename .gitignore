@@ -1,4 +1,7 @@
 .vercel
+# Ignore all .env files except .env.example
+.env
+!.env.example
 backend/.env
 fin/.env.development
 fin/.env.production

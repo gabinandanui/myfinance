@@ -241,7 +241,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
           />
         </TableContainer>
         
-        <div className="chartWrapper" style={{ minWidth: '250px' }}>
+        <div className="chartWrapper" style={{ minWidth: '0', flex: '1' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>
             Expenses by Category
           </h3>
@@ -254,11 +254,12 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
                   faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
                 },
               ]}
-              width={300}
-              height={250}
+              width={400}
+              height={300}
               slotProps={{
                 legend: { hidden: true },
               }}
+              margin={{ top: 0, bottom: 0, left: 0, right: 0 }}
             />
           ) : (
             <p style={{ textAlign: 'center', color: '#666' }}>

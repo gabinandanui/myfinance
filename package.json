@@ -1,4 +1,8 @@
 {
+  "workspaces": [
+    "backend",
+    "fin"
+  ],
   "scripts": {
     "build": "npm run build --workspace=fin"
   },

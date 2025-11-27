@@ -65,6 +65,17 @@ app.get('/api', async (req, res) => {
   });
 });
 
+// Root endpoint (browser-friendly) - only enabled during development to avoid
+// changing production / serverless behavior on platforms like Vercel.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'MyFinance backend is running',
+      info: 'Use /api or /api/expenses for endpoints',
+      timestamp: new Date().toISOString()
+    });
+  });
+}
 // Get all expenses
 app.get('/api/expenses', async (req, res) => {
   try {

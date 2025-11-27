@@ -6,5 +6,11 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true
   },
+  // Dev server proxy: forward `/api` to backend running on localhost:4000
+  server: {
+    proxy: {
+      '/api': 'http://localhost:4000'
+    }
+  },
   plugins: [react()],
 })

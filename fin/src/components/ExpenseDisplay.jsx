@@ -146,8 +146,8 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
 
   return (
     <>
-      <div className='flex flex-row gap-5'>
-        <TableContainer component={Paper} className='flex flex-col tableContainer'>
+      <div className='flex flex-col lg:flex-row gap-5'>
+        <TableContainer component={Paper} className='flex flex-col tableContainer lg:w-[70%] w-full'>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -241,7 +241,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
           />
         </TableContainer>
         
-        <div className="chartWrapper" style={{ minWidth: '0', flex: '1' }}>
+        <div className="chartWrapper" style={{ minWidth: '0', flex: '1', width: '100%' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>
             Expenses by Category
           </h3>
@@ -254,7 +254,7 @@ function ExpenseDisplay({ expense, setExpense, editExpense, SetEditExpense }) {
                   faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
                 },
               ]}
-              width={window.innerWidth * 0.4}
+              width={100%}
               height={300}
               slotProps={{
                 legend: { hidden: true },

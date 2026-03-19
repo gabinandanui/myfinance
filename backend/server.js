@@ -1,15 +1,9 @@
-console.log('ENV VARS:', process.env);
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require("mongodb");
 require('dotenv').config();
 
-
 const uri = process.env.MONGODB_URI;
-if (!uri) {
-  console.error('MONGODB_URI is not set!');
-}
-const client = new MongoClient(uri);
 
 const app = express();
 
@@ -39,12 +33,22 @@ app.use(cors({
 
 app.use(express.json());
 
+// MongoClient instance (will be initialized in connectDB)
+let client;
 let collection;
 
 // Connect to MongoDB with connection reuse for serverless
 async function connectDB() {
   try {
+    if (!uri) {
+      console.error('MONGODB_URI is not set in environment!');
+      throw new Error('Database configuration missing');
+    }
+    
     if (!collection) {
+      if (!client) {
+        client = new MongoClient(uri);
+      }
       await client.connect();
       const db = client.db("MyExpenseDB");
       collection = db.collection("MyExpenseCollection");
@@ -65,8 +69,7 @@ app.get('/api', async (req, res) => {
   });
 });
 
-// Root endpoint (browser-friendly) - only enabled during development to avoid
-// changing production / serverless behavior on platforms like Vercel.
+// Root endpoint (browser-friendly)
 if (process.env.NODE_ENV !== 'production') {
   app.get('/', (req, res) => {
     res.json({
@@ -76,6 +79,7 @@ if (process.env.NODE_ENV !== 'production') {
     });
   });
 }
+
 // Get all expenses
 app.get('/api/expenses', async (req, res) => {
   try {
@@ -114,7 +118,6 @@ app.put('/api/expenses/:id', async (req, res) => {
     await connectDB();
     const { id } = req.params;
     
-    // Check if id is a valid ObjectId or custom id
     let query;
     if (ObjectId.isValid(id) && id.length === 24) {
       query = { _id: new ObjectId(id) };
@@ -150,7 +153,6 @@ app.delete('/api/expenses/:id', async (req, res) => {
     await connectDB();
     const { id } = req.params;
     
-    // Check if id is a valid ObjectId or custom id
     let query;
     if (ObjectId.isValid(id) && id.length === 24) {
       query = { _id: new ObjectId(id) };

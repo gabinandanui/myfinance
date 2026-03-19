@@ -71,9 +71,6 @@ See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instr
 │   │   ├── components/
 │   │   ├── services/
 │   │   └── App.jsx
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.cjs
 ├── vercel.json              # Vercel configuration
 └── package.json             # Root package (monorepo)
 ```

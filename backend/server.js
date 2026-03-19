@@ -1,10 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require("mongodb");
-require('dotenv').config();
+const result = require('dotenv').config();
 
 const uri = process.env.MONGODB_URI;
-
 const app = express();
 
 // CORS configuration - allow your Vercel frontend
@@ -19,7 +18,7 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -41,29 +40,35 @@ let collection;
 async function connectDB() {
   try {
     if (!uri) {
-      console.error('MONGODB_URI is not set in environment!');
+      console.error('[DATABASE] ERROR: MONGODB_URI is missing from environment!');
       throw new Error('Database configuration missing');
     }
-    
+
     if (!collection) {
       if (!client) {
-        client = new MongoClient(uri);
+        console.log('[DATABASE] Initializing new MongoClient...');
+        client = new MongoClient(uri, {
+          // Safe options for Node v20+
+          connectTimeoutMS: 5000,
+          serverSelectionTimeoutMS: 5000
+        });
       }
+      console.log('[DATABASE] Attempting to connect to MongoDB...');
       await client.connect();
       const db = client.db("MyExpenseDB");
       collection = db.collection("MyExpenseCollection");
-      console.log("Successfully connected to MongoDB!");
+      console.log("[DATABASE] SUCCESS: Connected to MongoDB!");
     }
     return collection;
   } catch (error) {
-    console.error("Failed to connect to MongoDB", error);
+    console.error("[DATABASE] FAILED to connect:", error); // Logs full error
     throw error;
   }
 }
 
 // Health check endpoint
 app.get('/api', async (req, res) => {
-  res.json({ 
+  res.json({
     message: 'MyFinance API is running',
     timestamp: new Date().toISOString()
   });
@@ -117,25 +122,25 @@ app.put('/api/expenses/:id', async (req, res) => {
   try {
     await connectDB();
     const { id } = req.params;
-    
+
     let query;
     if (ObjectId.isValid(id) && id.length === 24) {
       query = { _id: new ObjectId(id) };
     } else {
       query = { id: id };
     }
-    
+
     const updateData = {
       ...req.body,
       updatedAt: new Date()
     };
-    
+
     const result = await collection.findOneAndUpdate(
       query,
       { $set: updateData },
       { returnDocument: 'after' }
     );
-    
+
     if (result) {
       res.json(result);
     } else {
@@ -152,16 +157,16 @@ app.delete('/api/expenses/:id', async (req, res) => {
   try {
     await connectDB();
     const { id } = req.params;
-    
+
     let query;
     if (ObjectId.isValid(id) && id.length === 24) {
       query = { _id: new ObjectId(id) };
     } else {
       query = { id: id };
     }
-    
+
     const result = await collection.deleteOne(query);
-    
+
     if (result.deletedCount > 0) {
       res.json({ success: true, message: 'Expense deleted' });
     } else {
@@ -176,7 +181,7 @@ app.delete('/api/expenses/:id', async (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && (err.stack || err));
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? (err && err.message) : 'Something went wrong'
   });
